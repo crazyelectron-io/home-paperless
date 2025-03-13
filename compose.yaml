@@ -1,0 +1,151 @@
+---
+# Docker Compose file for running paperless from the docker container registry.
+# This file contains everything paperless needs to run.
+# Paperless supports amd64, arm and arm64 hardware.
+#
+# All compose files of paperless configure paperless in the following way:
+#
+# - Paperless is (re)started on system boot, if it was running before shutdown.
+# - Docker volumes for storing data are managed by Docker.
+# - Folders for importing and exporting files are created in the same directory
+#   as this file and mounted to the correct folders inside the container.
+# - Paperless listens on port 8000.
+#
+# In addition to that, this Docker Compose file adds the following optional
+# configurations:
+#
+# - Instead of SQLite (default), PostgreSQL is used as the database server.
+# - Apache Tika and Gotenberg servers are started with paperless and paperless
+#   is configured to use these services. These provide support for consuming
+#   Office documents (Word, Excel, Power Point and their LibreOffice counter-
+#   parts.
+#
+# To install and update paperless with this file, do the following:
+#
+# - Copy this file as 'docker-compose.yml' and the files 'docker-compose.env'
+#   and '.env' into a folder.
+# - Run 'docker compose pull'.
+# - Run 'docker compose run --rm webserver createsuperuser' to create a user.
+# - Run 'docker compose up -d'.
+#
+# For more extensive installation and update instructions, refer to the
+# documentation.
+
+services:
+
+  broker:
+    container_name: paperless-broker
+    image: docker.io/library/redis:7
+    restart: unless-stopped
+    volumes:
+      - /mnt/data/paperless/redisdata:/data
+    networks:
+      - backend
+
+  paperless_db:
+    container_name: paperless_db
+    image: docker.io/library/postgres:16
+    restart: unless-stopped
+    volumes:
+      - /mnt/data/paperless-pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${PAPERLESS_POSTGRES_DB}
+      POSTGRES_USER: ${PAPERLESS_POSTGRES_USER}
+      # Don't change this password as it won't start
+      POSTGRES_PASSWORD: ${PAPERLESS_POSTGRES_PASSWORD}
+    networks:
+      - backend
+
+  paperless:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless
+    volumes:
+      - /mnt/data/paperless/data:/usr/src/paperless/data
+      - /mnt/data/paperless/media:/usr/src/paperless/media
+      - /mnt/data/paperless/export:/usr/src/paperless/export
+      - /mnt/data/paperless/consume:/usr/src/paperless/consume
+    # Not needed as we're using Traefik
+    #ports:
+    #  - 8010:8000
+    restart: unless-stopped
+    networks:
+      - backend
+      - frontend
+    depends_on:
+      - paperless_db
+      - broker
+      - gotenberg
+      - tika
+    env_file: .env
+    environment:
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_DBHOST: paperless_db
+      USERMAP_UID: 1000
+      USERMAP_GID: 1000
+      # PAPERLESS_ADMIN_USER:
+      # PAPERLESS_ADMIN_PASSWORD:
+      PAPERLESS_OCR_LANGUAGES: nld
+      # PAPERLESS_SECRET_KEY: 
+      PAPERLESS_TIME_ZONE: Europe/Amsterdam
+      PAPERLESS_CONSUMER_POLLING: 15
+      PAPERLESS_OCR_LANGUAGE: nld
+      PAPERLESS_TIKA_ENABLED: 1
+      PAPERLESS_TIKA_GOTENBERG_ENDPOINT: http://gotenberg:3000
+      PAPERLESS_TIKA_ENDPOINT: http://tika:9998
+      PAPERLESS_URL: https://${PAPERLESS_DOMAIN}
+      PAPERLESS_DISABLE_REGULAR_LOGIN: true
+      PAPERLESS_APPS: "allauth.socialaccount.providers.openid_connect"
+      PAPERLESS_SOCIALACCOUNT_PROVIDERS: '{"openid_connect": {"APPS": [{"provider_id": "authentik","name": "Authentik SSO","client_id": "${PAPERLESS_CLIENT_ID}","secret": "${PAPERLESS_CLIENT_SECRET}","settings": {"server_url": "https://${AUTHENTIK_DOMAIN}/application/o/paperless-ngx/.well-known/openid-configuration"}}]}}'
+      PAPERLESS_GMAIL_OAUTH_CLIENT_ID: "${PAPERLESS_GMAIL_CLIENT_ID}"
+      PAPERLESS_GMAIL_OAUTH_CLIENT_SECRET: "{PAPERLESS_GMAIL_CLIENT_SECRET}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.paperless.entrypoints=http"
+      - "traefik.http.routers.paperless.rule=Host(`${PAPERLESS_DOMAIN}`)"
+      - "traefik.http.middlewares.paperless-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.paperless.middlewares=paperless-https-redirect"
+      - "traefik.http.routers.paperless-secure.entrypoints=https"
+      - "traefik.http.routers.paperless-secure.rule=Host(`${PAPERLESS_DOMAIN}`)"
+      - "traefik.http.routers.paperless-secure.tls=true"
+      - "traefik.http.routers.paperless.service=paperless"
+      - "traefik.http.services.paperless.loadbalancer.server.port=8000"
+      - "traefik.docker.network=frontend"
+      
+  gotenberg:
+    image: docker.io/gotenberg/gotenberg:8.7
+    container_name: gotenberg
+    restart: unless-stopped
+    # The Gotenberg chromium route is used to convert .eml files. We do not
+    # want to allow external content like tracking pixels or even javascript.
+    command:
+      - "gotenberg"
+      - "--chromium-disable-javascript=true"
+      - "--chromium-allow-list=file:///tmp/.*"
+      - "--api-timeout=300s"
+    networks:
+      - backend
+
+  tika:
+    image: docker.io/apache/tika:latest
+    container_name: tika
+    restart: unless-stopped
+    networks:
+      - backend
+
+  paperless-ai:
+    image: clusterzx/paperless-ai
+    container_name: paperless-ai
+    volumes:
+      - /mnt/data/appdata/paperless/ai-data:/app/data
+    ports:
+      - 4568:3000
+    # network_mode: host
+    restart: unless-stopped
+    networks:
+      - backend
+
+networks:
+  backend:
+    external: true
+  frontend:
+    external: true
