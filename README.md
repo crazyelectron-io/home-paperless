@@ -1,2 +1,2 @@
 # home-paperless
-Komodo managed Docker stack running Paperless-ngx
+Komodo managed Docker stack running Paperless-ngx.
