@@ -138,7 +138,7 @@ services:
     env_file: .env
     volumes:
       - /mnt/data/appdata/paperless/ai-data:/app/data
-    network_mode: bridge
+    network_mode: host
     restart: unless-stopped
     # networks:
     #   - frontend
