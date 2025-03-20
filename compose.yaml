@@ -143,6 +143,7 @@ services:
     # network_mode: host
     restart: unless-stopped
     networks:
+      - frontend
       - backend
 
 networks:
