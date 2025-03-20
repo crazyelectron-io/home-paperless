@@ -138,13 +138,21 @@ services:
     env_file: .env
     volumes:
       - /mnt/data/appdata/paperless/ai-data:/app/data
-    ports:
-      - 4568:3000
-    network_mode: host
+    network_mode: bridge
     restart: unless-stopped
     # networks:
     #   - frontend
     #   - backend
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges=true
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - PAPERLESS_AI_PORT=4568
+    ports:
+      - "4568:${PAPERLESS_AI_PORT:-4568}"
 
 networks:
   backend:
