@@ -135,6 +135,7 @@ services:
   paperless-ai:
     image: clusterzx/paperless-ai
     container_name: paperless-ai
+    env_file: .env
     volumes:
       - /mnt/data/appdata/paperless/ai-data:/app/data
     ports:
