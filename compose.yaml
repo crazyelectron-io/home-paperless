@@ -140,11 +140,11 @@ services:
       - /mnt/data/appdata/paperless/ai-data:/app/data
     ports:
       - 4568:3000
-    # network_mode: host
+    network_mode: host
     restart: unless-stopped
-    networks:
-      - frontend
-      - backend
+    # networks:
+    #   - frontend
+    #   - backend
 
 networks:
   backend:
