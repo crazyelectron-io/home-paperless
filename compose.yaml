@@ -1,24 +1,5 @@
 ---
 # Docker Compose file for running paperless from the docker container registry.
-# This file contains everything paperless needs to run.
-# Paperless supports amd64, arm and arm64 hardware.
-#
-# All compose files of paperless configure paperless in the following way:
-#
-# - Paperless is (re)started on system boot, if it was running before shutdown.
-# - Docker volumes for storing data are managed by Docker.
-# - Folders for importing and exporting files are created in the same directory
-#   as this file and mounted to the correct folders inside the container.
-# - Paperless listens on port 8000.
-#
-# In addition to that, this Docker Compose file adds the following optional
-# configurations:
-#
-# - Instead of SQLite (default), PostgreSQL is used as the database server.
-# - Apache Tika and Gotenberg servers are started with paperless and paperless
-#   is configured to use these services. These provide support for consuming
-#   Office documents (Word, Excel, Power Point and their LibreOffice counter-
-#   parts.
 #
 # To install and update paperless with this file, do the following:
 #
@@ -27,9 +8,6 @@
 # - Run 'docker compose pull'.
 # - Run 'docker compose run --rm webserver createsuperuser' to create a user.
 # - Run 'docker compose up -d'.
-#
-# For more extensive installation and update instructions, refer to the
-# documentation.
 
 services:
 
@@ -89,6 +67,7 @@ services:
       PAPERLESS_TIME_ZONE: Europe/Amsterdam
       PAPERLESS_CONSUMER_POLLING: 15
       PAPERLESS_OCR_LANGUAGE: nld
+      PAPERLESS_WEBSERVER_WORKERS: 4
       PAPERLESS_TIKA_ENABLED: 1
       PAPERLESS_TIKA_GOTENBERG_ENDPOINT: http://gotenberg:3000
       PAPERLESS_TIKA_ENDPOINT: http://tika:9998
@@ -98,6 +77,7 @@ services:
       PAPERLESS_SOCIALACCOUNT_PROVIDERS: '{"openid_connect": {"APPS": [{"provider_id": "authentik","name": "Authentik SSO","client_id": "${PAPERLESS_CLIENT_ID}","secret": "${PAPERLESS_CLIENT_SECRET}","settings": {"server_url": "https://${AUTHENTIK_DOMAIN}/application/o/paperless-ngx/.well-known/openid-configuration"}}]}}'
       # PAPERLESS_GMAIL_OAUTH_CLIENT_ID: "${PAPERLESS_GMAIL_CLIENT_ID}"
       # PAPERLESS_GMAIL_OAUTH_CLIENT_SECRET: "{PAPERLESS_GMAIL_CLIENT_SECRET}"
+      PAPERLESS_OAUTH_CALLBACK_BASE_URL: "https://${PAPERLESS_DOMAIN}"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.paperless.entrypoints=http"
