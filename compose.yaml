@@ -96,8 +96,8 @@ services:
       PAPERLESS_DISABLE_REGULAR_LOGIN: true
       PAPERLESS_APPS: "allauth.socialaccount.providers.openid_connect"
       PAPERLESS_SOCIALACCOUNT_PROVIDERS: '{"openid_connect": {"APPS": [{"provider_id": "authentik","name": "Authentik SSO","client_id": "${PAPERLESS_CLIENT_ID}","secret": "${PAPERLESS_CLIENT_SECRET}","settings": {"server_url": "https://${AUTHENTIK_DOMAIN}/application/o/paperless-ngx/.well-known/openid-configuration"}}]}}'
-      PAPERLESS_GMAIL_OAUTH_CLIENT_ID: "${PAPERLESS_GMAIL_CLIENT_ID}"
-      PAPERLESS_GMAIL_OAUTH_CLIENT_SECRET: "{PAPERLESS_GMAIL_CLIENT_SECRET}"
+      # PAPERLESS_GMAIL_OAUTH_CLIENT_ID: "${PAPERLESS_GMAIL_CLIENT_ID}"
+      # PAPERLESS_GMAIL_OAUTH_CLIENT_SECRET: "{PAPERLESS_GMAIL_CLIENT_SECRET}"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.paperless.entrypoints=http"
