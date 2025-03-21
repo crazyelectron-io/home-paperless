@@ -138,11 +138,11 @@ services:
     env_file: .env
     volumes:
       - /mnt/data/appdata/paperless/ai-data:/app/data
-    network_mode: host
     restart: unless-stopped
-    # networks:
-    #   - frontend
-    #   - backend
+    # network_mode: host
+    networks:
+      - frontend
+      - backend
     cap_drop:
       - ALL
     security_opt:
@@ -151,8 +151,20 @@ services:
       - PUID=1000
       - PGID=1000
       - PAPERLESS_AI_PORT=4568
-    ports:
-      - "4568:${PAPERLESS_AI_PORT:-4568}"
+    # ports:
+    #   - "4568:${PAPERLESS_AI_PORT:-4568}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.paperless.entrypoints=http"
+      - "traefik.http.routers.paperless.rule=Host(`${PAPERLESS_AI_DOMAIN}`)"
+      - "traefik.http.middlewares.paperless-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.paperless.middlewares=paperless-https-redirect"
+      - "traefik.http.routers.paperless-secure.entrypoints=https"
+      - "traefik.http.routers.paperless-secure.rule=Host(`${PAPERLESS_AI_DOMAIN}`)"
+      - "traefik.http.routers.paperless-secure.tls=true"
+      - "traefik.http.routers.paperless.service=paperless"
+      - "traefik.http.services.paperless.loadbalancer.server.port=4568"
+      - "traefik.docker.network=frontend"
 
 networks:
   backend:
