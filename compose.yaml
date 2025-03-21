@@ -133,13 +133,12 @@ services:
       - backend
 
   paperless-ai:
-    image: clusterzx/paperless-ai
+    image: clusterzx/paperless-ai:${PAPERLESS_AI_TAG:-latest}
     container_name: paperless-ai
     env_file: .env
     volumes:
       - /mnt/data/appdata/paperless/ai-data:/app/data
     restart: unless-stopped
-    # network_mode: host
     networks:
       - frontend
       - backend
@@ -151,8 +150,6 @@ services:
       - PUID=1000
       - PGID=1000
       - PAPERLESS_AI_PORT=4568
-    # ports:
-    #   - "4568:${PAPERLESS_AI_PORT:-4568}"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.paperless-ai.entrypoints=http"
