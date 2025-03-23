@@ -131,7 +131,6 @@ services:
       - PUID=1000
       - PGID=1000
       - PAPERLESS_AI_PORT=4568
-      - PAPERLESS_USERNAME=${PAPERLESS_USERNAME}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.paperless-ai.entrypoints=http"
