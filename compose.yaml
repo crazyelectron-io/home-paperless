@@ -33,7 +33,12 @@ services:
       POSTGRES_PASSWORD: ${PAPERLESS_POSTGRES_PASSWORD}
     networks:
       - backend
+    labels:
+      - "alloy.logs.enable=true"
+      - "alloy.metrics.enable=true"
+      - "traefik.enable=false"
 
+  # --- Paperless - The main container
   paperless:
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
     container_name: paperless
@@ -80,6 +85,8 @@ services:
       # PAPERLESS_GMAIL_OAUTH_CLIENT_SECRET: "{PAPERLESS_GMAIL_CLIENT_SECRET}"
       PAPERLESS_OAUTH_CALLBACK_BASE_URL: "https://${PAPERLESS_DOMAIN}"
     labels:
+      - "alloy.logs.enable=true"
+      - "alloy.metrics.enable=true"
       - "traefik.enable=true"
       - "traefik.http.routers.paperless.entrypoints=http"
       - "traefik.http.routers.paperless.rule=Host(`${PAPERLESS_DOMAIN}`)"
@@ -105,6 +112,9 @@ services:
       - "--api-timeout=300s"
     networks:
       - backend
+    labels:
+      - "alloy.logs.enable=true"
+      - "alloy.metrics.enable=true"
 
   tika:
     image: docker.io/apache/tika:latest
@@ -112,7 +122,11 @@ services:
     restart: unless-stopped
     networks:
       - backend
+    labels:
+      - "alloy.logs.enable=true"
+      - "alloy.metrics.enable=true"
 
+  # --- Paperless AI
   paperless-ai:
     image: clusterzx/paperless-ai:${PAPERLESS_AI_TAG:-latest}
     container_name: paperless-ai
@@ -132,6 +146,8 @@ services:
       - PGID=1000
       - PAPERLESS_AI_PORT=4568
     labels:
+      - "alloy.logs.enable=true"
+      - "alloy.metrics.enable=true"
       - "traefik.enable=true"
       - "traefik.http.routers.paperless-ai.entrypoints=http"
       - "traefik.http.routers.paperless-ai.rule=Host(`${PAPERLESS_AI_DOMAIN}`)"
